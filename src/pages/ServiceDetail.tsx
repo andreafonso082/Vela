@@ -8,9 +8,13 @@ import Footer from "@/components/Footer";
 import { getServiceBySlug, servicesData } from "@/data/servicesData";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
-const ServiceDetail = () => {
+interface ServiceDetailProps {
+  serviceSlug?: string;
+}
+
+const ServiceDetail = ({ serviceSlug }: ServiceDetailProps) => {
   const params = useParams({ strict: false }) as { slug?: string };
-  const slug = params.slug;
+  const slug = serviceSlug || params.slug;
   const service = slug ? getServiceBySlug(slug) : undefined;
 
   const benefitsAnim = useScrollAnimation();
@@ -25,27 +29,16 @@ const ServiceDetail = () => {
   const canonical = `${appUrl}/services/${service.slug}`;
   const relatedServices = servicesData.filter((s) => s.slug !== service.slug).slice(0, 3);
 
-  // Define unique theme colors for each service
-  const getServiceTheme = (slug: string) => {
-    switch (slug) {
-      case "criacao-de-websites":
-        return { gradient: "from-red-600/20 to-primary/20", accent: "text-red-500", bg: "bg-red-500/10" };
-      case "seo-google-meu-negocio":
-        return { gradient: "from-orange-600/20 to-red-600/20", accent: "text-orange-500", bg: "bg-orange-500/10" };
-      case "gestao-de-redes-sociais":
-        return { gradient: "from-rose-600/20 to-red-600/20", accent: "text-rose-500", bg: "bg-rose-500/10" };
-      case "branding-e-logotipos":
-        return { gradient: "from-amber-600/20 to-orange-600/20", accent: "text-amber-500", bg: "bg-amber-500/10" };
-      case "google-ads":
-        return { gradient: "from-red-600/20 to-primary/20", accent: "text-primary", bg: "bg-primary/10" };
-      case "agentes-ia":
-        return { gradient: "from-red-500/20 to-rose-500/20", accent: "text-red-400", bg: "bg-red-400/10" };
-      default:
-        return { gradient: "from-primary/20 to-primary/20", accent: "text-primary", bg: "bg-primary/10" };
-    }
+  // Define consistent red theme colors for all services
+  const getServiceTheme = () => {
+    return { 
+      gradient: "from-primary/20 to-red-600/10", 
+      accent: "text-primary", 
+      bg: "bg-primary/10" 
+    };
   };
 
-  const theme = getServiceTheme(service.slug);
+  const theme = getServiceTheme();
 
   const serviceJsonLd = {
     "@context": "https://schema.org",
@@ -77,6 +70,44 @@ const ServiceDetail = () => {
       "availability": "https://schema.org/InStock",
       "areaServed": "PT"
     }
+  };
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": service.faq.map(f => ({
+      "@type": "Question",
+      "name": f.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": f.answer
+      }
+    }))
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": appUrl
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Serviços",
+        "item": `${appUrl}/services`
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": service.title,
+        "item": canonical
+      }
+    ]
   };
 
   const navLinks = [
@@ -242,10 +273,16 @@ const ServiceDetail = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {service.process.map((p, i) => (
                 <div key={i} className="relative group">
-                  <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 h-full hover:border-primary/20 transition-colors">
-                    <div className={`text-6xl font-black ${theme.accent} opacity-5 absolute -top-4 -right-2`}>0{i + 1}</div>
-                    <h3 className={`text-lg font-semibold text-white mb-2 relative z-10`}>{p.title}</h3>
-                    <p className="text-sm text-white/50 leading-relaxed relative z-10">{p.description}</p>
+                  <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 h-full hover:border-primary/30 hover:bg-white/[0.06] transition-all duration-300">
+                    <div className={`text-7xl font-black ${theme.accent} opacity-[0.04] absolute -top-6 -right-2 transition-all duration-700 ease-out group-hover:opacity-15 group-hover:scale-110 group-hover:-translate-x-2 group-hover:-translate-y-2 pointer-events-none italic`}>
+                      0{i + 1}
+                    </div>
+                    <h3 className={`text-lg font-semibold text-white mb-2 relative z-10 whitespace-nowrap`}>
+                      {p.title}
+                    </h3>
+                    <p className="text-sm text-white/50 leading-relaxed relative z-10">
+                      {p.description}
+                    </p>
                   </div>
                 </div>
               ))}
